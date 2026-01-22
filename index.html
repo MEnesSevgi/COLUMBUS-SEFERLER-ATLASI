@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
   <head>
     <meta charset="UTF-8">
-    <title>Müzeler Atlası</title>
+    <title>COLUMBUS SEFERLERİ ATLASI</title>
     
 
   </head>
@@ -12,999 +13,593 @@
   <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Müzeler Atlası</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    :root {
-      --steel-blue: #2c3e50;
-      --museum-gold: #f39c12;
-      --concrete-grey: #ecf0f1;
-      --gallery-blue: #34495e;
-      --danger-red: #e74c3c;
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>KOLOMB ATLASI | Sefer Bazlı Numaralandırma</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Quicksand:wght@300;500&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #1a1a1a; --accent: #d4af37; --ocean: #1e3d59; --glass: rgba(255, 255, 255, 0.95); }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Quicksand', sans-serif; background: #000; overflow: hidden; }
+        
+        .viewport { display: grid; grid-template-columns: 1fr 400px; height: 100vh; }
 
-    body,
-    html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      font-family: "Segoe UI", sans-serif;
-      background: var(--concrete-grey);
-      overflow: hidden;
-    }
-    .app-container {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      width: 100%;
-    }
-    @media (min-width: 768px) {
-      .app-container {
-        flex-direction: row;
-      }
-    }
+        @media (max-width: 1024px) {
+            .viewport { grid-template-columns: 1fr; 
+              grid-template-columns: 1fr;
+          grid-template-rows: 45dvh 55dvh; 
+        height: 100dvh;}
+            #sidebar { height: 100% !important; border-left: none !important; border-top: 3px solid var(--accent); display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Dışarı taşmayı engelle */ }
+           .sidebar-header h1 { font-size: 1rem; padding: 5px; }
+    #event-img { max-height: 120px; } /* Resim boyutu mobilde biraz küçültüldü */ 
+        }
 
-    #map {
-      flex: 1;
-      width: 100%;
-      z-index: 1;
-      background: #95a5a6;
-    }
+        #map { background: var(--ocean); z-index: 1; position: relative; }
+        
+        .search-hud { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1001; width: 90%; max-width: 550px; background: var(--glass); padding: 5px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); border: 1px solid var(--accent); }
+        .search-hud select { width: 100%; border: none; background: transparent; padding: 10px; font-family: 'Cinzel', serif; font-weight: bold; font-size: 12px; outline: none; }
+        
+        #sidebar { background: white; border-left: 4px solid var(--accent); display: flex; flex-direction: column; z-index: 1002; height: 100vh; overflow: hidden; }
+        .sidebar-header { padding: 15px; background: var(--primary); color: var(--accent); text-align: center; font-family: 'Cinzel', serif; flex-shrink: 0; }
+        .content-scroll { padding: 15px; 
+        padding-bottom: 80px; /* En alta ekstra boşluk ekledik */
+        overflow-y: auto; 
+        -webkit-overflow-scrolling: touch; }
+        
+        #event-title { font-family: 'Cinzel', serif; color: var(--primary); margin: 0; font-size: 18px; }
+        .voyage-chip { display: inline-block; padding: 3px 10px; border-radius: 4px; color: white; font-size: 10px; font-weight: bold; margin-bottom: 8px; }
+        .description { font-size: 13px; line-height: 1.5; color: #333; margin-bottom: 10px; }
+        #event-img { width: 100%; border-radius: 8px; margin-bottom: 10px; display: none; max-height: 150px; object-fit: cover; }
+        .wiki-card { background: #fdfaf0; border: 1px solid #eee; padding: 10px; border-radius: 6px; font-size: 12px; color: #555; }
+        
+        .play-btn { background: #27ae60; color: white; border: none; width: 100%; padding: 12px; border-radius: 6px; font-family: 'Cinzel', serif; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.3s; }
+        .play-btn:disabled { background: #95a5a6; }
 
- #info-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  border-left: 6px solid var(--museum-gold);
-  box-shadow: -5px 0 25px rgba(0, 0, 0, 0.2);
-}
-    .header, .search-area {
-  flex-shrink: 0;
-}
-
-#content-area {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  padding: 25px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Vikipedi butonunun alt kısmı hep görünür olsun */
-#wiki-link {
-  margin-top: auto;
-  display: block;
-}
-
-    @media (min-width: 768px) {
-      #info-panel {
-        width: 450px;
-        height: 100%;
-        border-left: 6px solid var(--museum-gold);
-      }
-    }
-@media (max-width: 767px) {
-  .app-container {
-    flex-direction: column;
-    height: 100vh;
-  }
-
-  #map {
-    height: 50vh; /* Harita yüksekliği yarı ekran */
-    flex: none;   /* flex-grow kapat */
-  }
-
-  #info-panel {
-    height: 50vh; /* Panel yüksekliği yarı ekran */
-    overflow-y: auto; /* İçerik scroll */
-    border-left: none;
-    box-shadow: none;
-  }
-
-  #content-area {
-    flex: none;
-    padding-bottom: 60px; /* Buton için boşluk */
-  }
-
-  #wiki-link {
-    position: sticky;
-    bottom: 0;
-    width: 100%;
-    margin-top: 0;
-    z-index: 10;
-    background: var(--steel-blue);
-    padding: 15px 0;
-    text-align: center;
-    border-radius: 0 0 6px 6px;
-    display: block !important;
-  }
-}
-
-    .header {
-      background: var(--steel-blue);
-      color: white;
-      padding: 15px;
-      text-align: center;
-      border-bottom: 4px solid var(--museum-gold);
-    }
-    .header h1 {
-      margin: 0;
-      font-size: 16px;
-      letter-spacing: 2px;
-      font-weight: 800;
-      text-transform: uppercase;
-    }
-
-    .search-area {
-      padding: 12px;
-      background: #fdfdfd;
-      border-bottom: 1px solid #ddd;
-    }
-    select {
-      width: 100%;
-      padding: 12px;
-      border: 2px solid #ddd;
-      border-radius: 6px;
-      font-size: 14px;
-      outline: none;
-      background: #fff;
-      font-weight: 600;
-    }
-
-    #content-area {
-      padding: 25px;
-      overflow-y: auto;
-      flex: 1;
-    }
-    #museum-title {
-      margin: 0;
-      color: var(--steel-blue);
-      font-size: 26px;
-      font-weight: 900;
-      line-height: 1.2;
-    }
-
-    .museum-badge {
-      margin: 12px 0;
-      display: inline-flex;
-      align-items: center;
-      background: #fff3e0;
-      color: #e67e22;
-      padding: 6px 14px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      border: 1px solid #ffcc80;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 15px;
-    }
-    .stat-item {
-      background: #f8f9fa;
-      padding: 10px;
-      border-radius: 6px;
-      border-bottom: 2px solid #ddd;
-    }
-    .stat-label {
-      font-size: 10px;
-      color: #7f8c8d;
-      text-transform: uppercase;
-      display: block;
-    }
-    .stat-value {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--steel-blue);
-    }
-
-    .details-box {
-      font-size: 15px;
-      color: #333;
-      line-height: 1.7;
-      margin-top: 20px;
-    }
-
-    #museum-img {
-      width: 100%;
-      border-radius: 8px;
-      margin-top: 20px;
-      display: none;
-      object-fit: cover;
-      max-height: 250px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .btn {
-      display: block;
-      margin-top: 25px;
-      padding: 15px;
-      background: var(--steel-blue);
-      color: white;
-      text-decoration: none;
-      text-align: center;
-      border-radius: 6px;
-      font-weight: bold;
-      transition: 0.3s;
-    }
-    .btn:hover {
-      background: var(--museum-gold);
-      color: white;
-    }
-
-    .translation-info {
-      font-size: 11px;
-      color: #d32f2f;
-      background: #ffebee;
-      padding: 4px 8px;
-      border-radius: 4px;
-      margin-bottom: 10px;
-      display: inline-block;
-      font-weight: bold;
-    }
-
-    /* Normal marker */
-    .museum-marker {
-      width: 30px !important;
-      height: 30px !important;
-      background: var(--steel-blue);
-      border: 2px solid var(--museum-gold);
-      border-radius: 50% 50% 50% 0;
-      transform: rotate(-45deg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-      cursor: pointer;
-    }
-    .museum-marker i {
-      transform: rotate(45deg);
-      color: white;
-      font-size: 14px;
-      user-select: none;
-    }
-
-    /* Seçilen marker */
-    .museum-marker-selected {
-      width: 34px !important;
-      height: 34px !important;
-      background: #e67e22; /* Turuncu ton */
-      border: 2px solid #c55a11;
-      border-radius: 50% 50% 50% 0;
-      transform: rotate(-45deg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 14px rgba(230, 126, 34, 0.8);
-      cursor: pointer;
-    }
-    .museum-marker-selected i {
-      transform: rotate(45deg);
-      color: white;
-      font-size: 16px;
-      user-select: none;
-    }
-  </style>
+        .compass-marker { background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .marker-label { background: rgba(255, 255, 255, 0.9) !important; border: 1px solid var(--accent) !important; font-weight: bold !important; color: #000 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    </style>
 </head>
 <body>
-  <div class="app-container">
-    <div id="map"></div>
-    <div id="info-panel">
-      <div class="header">
-        <h1>Müzeler Atlası</h1>
-      </div>
-      <div class="search-area">
-        <select id="museumSelect">
-          <option value="">Bir Müze Seçin...</option>
-        </select>
-      </div>
-      <div id="content-area">
-        <h2 id="museum-title">Kültürün Zirvesine Yolculuk</h2>
-        <div id="type-box" style="display:none;" class="museum-badge">
-          MÜZE TÜRÜ: <span id="museum-type" style="margin-left:5px;"></span>
+
+<div class="viewport">
+    <div id="map">
+        <div class="search-hud">
+            <select id="eventSelect">
+                <option value="RESET">🧭 SEFER SEÇİN</option>
+                <optgroup label="⚓ SEFERLER" id="routeGroup"></optgroup>
+                <optgroup label="📍 TÜM DURAKLAR" id="pointGroup"></optgroup>
+            </select>
         </div>
-        <div class="stats-grid" id="museum-stats" style="display:none;">
-          <div class="stat-item">
-            <span class="stat-label">Konum</span>
-            <span class="stat-value" id="stat-loc">-</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Kuruluş Yılı</span>
-            <span class="stat-value" id="stat-year">-</span>
-          </div>
-        </div>
-        <img id="museum-img" src="" alt="Müze Görseli" />
-        <div id="museum-text" class="details-box">
-          Dünyanın en büyük ve etkileyici müzelerini keşfetmek için haritadaki noktalara tıklayın veya listeden seçim yapın.
-        </div>
-        <a id="wiki-link" href="#" target="_blank" class="btn" style="display:none;">DETAYLI BİLGİ</a>
-      </div>
     </div>
-  </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    // Örnek Müze Verisi (kısaltılmış, tam listeyi yukarıdaki gibi ekleyin)
-    const museumData = [
-         {
-    name: "İstanbul Arkeoloji Müzeleri",
-    lat: 41.011667,
-    lng: 28.981389 , 
-    wiki: "İstanbul_Arkeoloji_Müzeleri",
-    type: "Arkeoloji Müzesi",
-    loc: "Türkiye, İstanbul",
-    year: "1891",
-    desc: "Türkiye’nin en kapsamlı arkeoloji müzesi, zengin koleksiyonlarıyla dünya çapında tanınır."
-  },
-  {
-    name: "Topkapı Sarayı Müzesi",
-    lat:  41.013056,
-    lng: 28.983889,
-    wiki: "Topkapı_Sarayı",
-    type: "Tarih Müzesi",
-    loc: "Türkiye, İstanbul",
-    year: "1924",
-    desc: "Osmanlı İmparatorluğu'nun eski sarayı ve şimdi büyük bir müze kompleksi."
-  },
-  {
-    name: "Anadolu Medeniyetleri Müzesi",
-    lat: 39.938333,
-    lng: 32.861944,  
-    wiki: "Anadolu_Medeniyetleri_Müzesi",
-    type: "Arkeoloji Müzesi",
-    loc: "Türkiye, Ankara",
-    year: "1921",
-    desc: "Anadolu’nun zengin tarihini sergileyen Türkiye’nin en önemli müzelerinden biri."
-  },
-  {
-    name: "Pera Müzesi",
-    lat: 41.031944,
-    lng: 28.975278,  
-    wiki: "Pera_Müzesi",
-    type: "Sanat Müzesi",
-    loc: "Türkiye, İstanbul",
-    year: "2005",
-    desc: "Çağdaş ve klasik sanat eserlerinin sergilendiği modern müze."
-  },
-  {
-    name: "Sakıp Sabancı Müzesi",
-    lat: 41.099167,
-    lng:29.053611, 
-    wiki: "Sakıp_Sabancı_Müzesi",
-    type: "Sanat Müzesi",
-    loc: "Türkiye, İstanbul",
-    year: "2002",
-    desc: "Türk ve İslam sanatının önemli koleksiyonlarına ev sahipliği yapar."
-  },
-  {
-    name: "Rahmi M. Koç Müzesi",
-    lat: 41.04227,
-    lng: 28.94926,
-    wiki: "Rahmi_M._Koç_Museum",
-    type: "Endüstri ve Teknoloji Müzesi",
-    loc: "Türkiye, İstanbul",
-    year: "1994",
-    desc: "Sanayi, ulaşım ve iletişim tarihi üzerine zengin koleksiyonlar."
-  },
-  {
-    name: "Mevlana Müzesi",
-    lat: 37.870556,
-    lng: 32.504722 , 
-    wiki: "Mevlana_Müzesi",
-    type: "Tarih ve Kültür Müzesi",
-    loc: "Türkiye, Konya",
-    year: "1927",
-    desc: "Mevlana Celaleddin Rumi’nin türbesi ve tasavvuf kültürünün merkezi."
+    <div id="sidebar">
+        <div class="sidebar-header"><h1>COLUMBUS SEFERLERİ ATLASI</h1></div>
+        <div class="content-scroll">
+            <button id="playRouteBtn" class="play-btn">🎬 SEFERİ SİNEMATİK İZLE</button>
+            <div id="voyage-chip" class="voyage-chip"></div>
+            <h2 id="event-title">Yükleniyor...</h2>
+            <div id="event-desc" class="description">Harita hazırlanıyor...</div>
+            <img id="event-img" src="">
+            <div id="wiki-box" class="wiki-card">Bağlanıyor...</div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const colors = { "1. SEFER": "#e67e22", "2. SEFER": "#27ae60", "3. SEFER": "#8e44ad", "4. SEFER": "#2980b9", "SÖMÜRGECİLİK": "#c0392b", "ÖLÜM": "#2c3e50", "DİPLOMASİ": "#7f8c8d" };
+
+// Veri setini olduğu gibi koruyoruz
+const dataSet = [
+  { name: "Palos de la Frontera", year: "1492", lat: 37.2285, lng: -6.8931, wiki: "Palos_de_la_Frontera", cat: "1. SEFER", desc: "3 Ağustos 1492: Kolomb yola çıktı." },
+    { name: "Kanarya Adaları", year: "1492", lat: 28.2916, lng: -16.6291, wiki: "Canary_Islands", cat: "1. SEFER", desc: "6 Ağustos 1492: Pinta'nın dümeni kırıldı, Kanarya Adaları'nda onarıldı." },
+    { 
+  name: "San Salvador", 
+  year: "1492", 
+  lat: 24.0450,  // İki nokta ortalaması gibi
+  lng: -74.5300, 
+  wiki: "San_Salvador_Island", 
+  cat: "1. SEFER", 
+  desc: "12 Ekim 1492: Kolomb'un karaya ayak bastığı ilk yer. Aynı dönemde bazı Taíno yerlileri esir alınarak İspanya'ya götürüldü." 
+},
+
+    { name: "Küba Keşfi", year: "1492", lat: 21.5218, lng: -77.7812, wiki: "Küba", cat: "1. SEFER", desc: "Ekim 1492: Kolomb burayı Asya anakarası sanmıştı." },
+    { name: "Hispaniola", year: "1492", lat: 19.7500, lng: -72.2000, wiki: "Hispaniola", cat: "1. SEFER", desc: "Aralık 1492: Kolomb dönemi ilk kalıcı yerleşim girişimi Avrupa yerleşimi La Navidad kuruldu." },
+   { 
+    name: "Ciguayos ile Çatışma", 
+    year: "1493", 
+    lat: 19.0000, 
+    lng: -69.0000, 
+    wiki: "Ciguayo", 
+    cat: "1. SEFER", 
+    desc: "1493: Kolomb, Ciguayos adlı yerli halkla şiddetli bir çatışmaya girdi; koya 'Oklar Körfezi' adını verdi." 
   },
 
-  {
-    name: "İzmir Arkeoloji Müzesi",
-    lat: 38.413889,
-    lng: 27.128056,  
-    wiki: "İzmir_Arkeoloji_Müzesi",
-    type: "Arkeoloji Müzesi",
-    loc: "Türkiye, İzmir",
-    year: "1927",
-    desc: "Ege bölgesinin zengin arkeolojik buluntularını barındırır."
+    { name: "Azor Adaları", year: "1493", lat: 36.9727, lng: -25.1415, wiki: "Azores", cat: "1. SEFER", desc: "Şubat 1493: Dönüş yolunda fırtınadan kaçış." },
+   
+  { name: "Lizbon", year: "1493", lat: 38.7223, lng: -9.1393, wiki: "Lisbon", cat: "1. SEFER", desc: "Dönüş yolunda önemli bir liman." },
+  
+{ 
+   name: "Palos (Final Dönüş)", 
+   year: "1493", 
+lat: 37.0500,  // İyice açığa, Cádiz Körfezi'nin dışına çekildi
+   lng: -7.1500,
+   wiki: "Palos_de_la_Frontera", 
+   cat: "1. SEFER", 
+   desc: "15 Mart 1493: Kolomb ilk seferini başladığı yerin açıklarına ulaşarak tamamladı." 
+ },
+  
+    { name: "Cádiz Limanı", year: "1493", lat: 36.5271, lng: -6.2886, wiki: "Cádiz", cat: "2. SEFER", desc: "Eylül 1493: 17 gemilik dev filoyla hareket." },
+  
+   { name: "Kanarya Adaları (2. Sefer)", year: "1493", lat: 28.2916, lng: -16.6291, wiki: "Canary_Islands", cat: "2. SEFER", desc: "Sefer öncesi ikmal ve onarım için durak." },
+  
+    { name: "Dominika", year: "1493", lat: 15.4150, lng: -61.3710, wiki: "Dominica", cat: "2. SEFER", desc: "Küçük Antiller'de önemli durak." },
+  { name: "Guadeloupe", year: "1493", lat: 16.2650, lng: -61.5510, wiki: "Guadeloupe", cat: "2. SEFER", desc: "Küçük Antiller'de durak." },
+  { name: "Antigua", year: "1493", lat: 17.0747, lng: -61.8175, wiki: "Antigua_and_Barbuda", cat: "2. SEFER", desc: "Küçük Antiller'de durak." },
+  { name: "Porto Riko (San Juan Bautista)", year: "1493", lat: 18.4655, lng: -66.1057, wiki: "San_Juan,_Puerto_Rico", cat: "2. SEFER", desc: "Kolonizasyonun başlangıç noktalarından biri." },
+  { name: "La Isabela", year: "1494", lat: 19.8894, lng: -71.0805, wiki: "La_Isabela", cat: "2. SEFER", desc: "Yeni Dünya'daki ilk idari merkez." },
+  
+  //
+  
+ { 
+    name: "Guantanamo Körfezi (Puerto Grande)", 
+    year: "1494", 
+    lat: 19.9167, 
+    lng: -75.1667, 
+    wiki: "Guantánamo_Bay", 
+    cat: "2. SEFER", 
+    desc: "Kolomb buraya 'Puerto Grande' adını verdi. Gemilerini burada dinlendirdi ve yerlilerle ilk teması kurdu." 
   },
-  {
-    name: "Çanakkale Arkeoloji Müzesi",
-    lat: 40.133333,
-    lng: 26.41, 
-    wiki: "Çanakkale_Arkeoloji_Müzesi",
-    type: "Arkeoloji Müzesi",
-    loc: "Türkiye, Çanakkale",
-    year: "1960",
-    desc: "Troya ve çevresinden çıkan tarihi eserleri içerir."
+  { 
+    name: "Cabo Cruz (Cape Cruz)", 
+    year: "1494", 
+    lat: 19.8411, 
+    lng: -77.7264, 
+    wiki: "Cabo_Cruz", 
+    cat: "2. SEFER", 
+    desc: "Küba'nın güneydoğusundaki en belirgin uç nokta. Buradan güneye saparak Jamaika'yı keşfetti, sonra buraya dönüp hatta devam etti." 
   },
-      {
-    name: "Louvre Müzesi",
-    lat: 48.8606,
-    lng: 2.3376,
-    wiki: "Louvre",
-    type: "Sanat Müzesi",
-    loc: "Fransa, Paris",
-    year: "1793",
-    desc: "Dünyanın en büyük sanat müzesi ve tarihi anıtlarından biridir."
-  },
-  {
-    name: "British Museum",
-    lat: 51.5194,
-    lng: -0.1270,
-    wiki: "British_Museum",
-    type: "Kültür ve Tarih Müzesi",
-    loc: "İngiltere, Londra",
-    year: "1753",
-    desc: "Dünyanın en kapsamlı insanlık tarihi koleksiyonlarından birine sahip müze."
-  },
-  {
-    name: "Metropolitan Museum of Art",
-    lat: 40.7794,
-    lng: -73.9632,
-    wiki: "Metropolitan_Museum_of_Art",
-    type: "Sanat Müzesi",
-    loc: "ABD, New York",
-    year: "1870",
-    desc: "Amerika'nın en büyük sanat müzesi ve zengin koleksiyonlarıyla ünlüdür."
-  },
-  {
-    name: "Vatican Museums",
-    lat: 41.9065,
-    lng: 12.4536,
-    wiki: "Vatican_Museums",
-    type: "Sanat ve Tarih Müzesi",
-    loc: "Vatikan",
-    year: "1506",
-    desc: "Dünyanın en önemli dini sanat koleksiyonlarına ev sahipliği yapar."
-  },
-  {
-    name: "State Hermitage Museum",
-    lat: 59.9398,
-    lng: 30.3146,
-    wiki: "Hermitage_Museum",
-    type: "Sanat ve Tarih Müzesi",
-    loc: "Rusya, St. Petersburg",
-    year: "1764",
-    desc: "Dünyanın en büyük ve en eski müzelerinden biridir."
-  },
-  {
-    name: "National Gallery",
-    lat: 51.5089,
-    lng: -0.1283,
-    wiki: "National_Gallery,_London",
-    type: "Sanat Müzesi",
-    loc: "İngiltere, Londra",
-    year: "1824",
-    desc: "Batı Avrupa resim sanatının önemli eserlerini barındıran müze."
-  },
-  {
-    name: "Museo del Prado",
-    lat: 40.4138,
-    lng: -3.6921,
-    wiki: "Museo_del_Prado",
-    type: "Sanat Müzesi",
-    loc: "İspanya, Madrid",
-    year: "1819",
-    desc: "İspanyol sanatının en önemli koleksiyonlarından birine sahiptir."
-  },
-  {
-    name: "Tate Modern",
-    lat: 51.5076,
-    lng: -0.0994,
-    wiki: "Tate_Modern",
-    type: "Modern Sanat Müzesi",
-    loc: "İngiltere, Londra",
-    year: "2000",
-    desc: "Modern ve çağdaş sanatın önde gelen müzelerindendir."
-  },
-  {
-    name: "Rijksmuseum",
-    lat: 52.3599,
-    lng: 4.8852,
-    wiki: "Rijksmuseum",
-    type: "Sanat ve Tarih Müzesi",
-    loc: "Hollanda, Amsterdam",
-    year: "1800",
-    desc: "Hollanda'nın en büyük sanat ve tarih müzesi."
-  },
-  {
-    name: "Museum of Modern Art (MoMA)",
-    lat: 40.7614,
-    lng: -73.9776,
-    wiki: "Museum_of_Modern_Art",
-    type: "Modern Sanat Müzesi",
-    loc: "ABD, New York",
-    year: "1929",
-    desc: "Modern sanatın en önemli koleksiyonlarından birine sahiptir."
-  },
-  {
-    name: "National Museum of China",
-    lat: 39.9042,
-    lng: 116.4074,
-    wiki: "National_Museum_of_China",
-    type: "Tarih ve Sanat Müzesi",
-    loc: "Çin, Pekin",
-    year: "2003",
-    desc: "Çin tarihini ve kültürünü sergileyen devasa müze."
-  },
-  {
-    name: "Guggenheim Museum Bilbao",
-    lat: 43.2686,
-    lng: -2.9349,
-    wiki: "Guggenheim_Museum_Bilbao",
-    type: "Modern Sanat Müzesi",
-    loc: "İspanya, Bilbao",
-    year: "1997",
-    desc: "Çağdaş sanat ve mimarinin ikonik örneği."
-  },
-  {
-    name: "National Palace Museum",
-    lat: 25.1024,
-    lng: 121.5485,
-    wiki: "National_Palace_Museum",
-    type: "Sanat ve Tarih Müzesi",
-    loc: "Tayvan, Taipei",
-    year: "1965",
-    desc: "Çin sanatının en önemli koleksiyonlarından birine ev sahipliği yapar."
-  },
-  {
-    name: "Victoria and Albert Museum",
-    lat: 51.4966,
-    lng: -0.1722,
-    wiki: "Victoria_and_Albert_Museum",
-    type: "Sanat ve Tasarım Müzesi",
-    loc: "İngiltere, Londra",
-    year: "1852",
-    desc: "Sanat, tasarım ve dekoratif sanatlarda geniş koleksiyonları içerir."
-  },
-  {
-    name: "National Museum of Anthropology (Mexico City)",
-    lat: 19.4260,
-    lng: -99.1860,
-    wiki: "National_Museum_of_Anthropology_(Mexico_City)",
-    type: "Antropoloji Müzesi",
-    loc: "Meksika, Mexico City",
-    year: "1964",
-    desc: "Meksika'nın zengin tarihini ve kültürünü sergiler."
+   { name: "Jamaika Keşfi", year: "1494", lat: 18.1096, lng: -77.2975, wiki: "Jamaica", cat: "2. SEFER", desc: "Mayıs 1494: Adanın doğal güzelliği Kolomb'u hayran bıraktı." },
+  { 
+    name: "Jardines de la Reina (Kraliçe Bahçeleri)", 
+    year: "1494", 
+    lat: 20.8167, 
+    lng: -78.9167, 
+    wiki: "Jardines_de_la_Reina", 
+    cat: "2. SEFER", 
+    desc: "Yüzlerce küçük adacıktan oluşan bu bölgeye Kraliçe Isabel onuruna bu ismi verdi. Labirent gibi adalar arasında ilerlemek çok güçtü." 
   },
 
-  {
-    name: "Museo Nacional de Antropología",
-    lat: 19.4260,
-    lng: -99.1860,
-    wiki: "Museo_Nacional_de_Antropología",
-    type: "Antropoloji Müzesi",
-    loc: "Meksika, Mexico City",
-    year: "1964",
-    desc: "Meksika'nın yerli kültürlerine odaklanan büyük müze."
+  { 
+  name: "Bahía de Cortés (Cortés Körfezi)", 
+  year: "1494", 
+  lat: 22.0333, 
+  lng: -84.0000, 
+  wiki: "Küba",  // Bu sayfa Küba körfezleri hakkında bilgi verir
+  cat: "2. SEFER", 
+  desc: "Seyahatin batıdaki en uç noktası. Mürettebat yorgunluğu ve erzak azlığı nedeniyle buradan geri dönme kararı alındı." 
+},
+  { 
+    name: "Evangelista (Isla de la Juventud)", 
+    year: "1494", 
+    lat: 21.6167, 
+    lng: -82.8167, 
+    wiki: "Isla_de_la_Juventud", 
+    cat: "2. SEFER", 
+    desc: "Dönüş yoluna geçmeden hemen önce ulaşılan büyük ada. Isla de la Juventud, Küba'nın 2. ve Karayipler'in 7. büyük adasıdır. Kolomb Küba'nın Asya olduğuna inanıyordu." 
   },
-  {
-    name: "Uffizi Gallery",
-    lat: 43.7687,
-    lng: 11.2559,
-    wiki: "Uffizi_Gallery",
-    type: "Sanat Müzesi",
-    loc: "İtalya, Floransa",
-    year: "1581",
-    desc: "Rönesans sanatının en önemli koleksiyonlarından biri."
+  { 
+    name: "Jamaika Güney Kıyıları", 
+    year: "1494", 
+    lat: 17.281906466254963, 
+    lng: -77.44509007920922, 
+    wiki: "Jamaica", 
+    cat: "2. SEFER", 
+    desc: "Dönüş yolunda Jamaika'nın güney kıyıları keşfedildi."  , 
   },
-  {
-    name: "National Gallery of Art",
-    lat: 38.8913,
-    lng: -77.0199,
-    wiki: "National_Gallery_of_Art",
-    type: "Sanat Müzesi",
-    loc: "ABD, Washington D.C.",
-    year: "1937",
-    desc: "Amerika'nın başkentinde büyük sanat koleksiyonları."
+  { 
+    name: "Mona Geçidi (Mona Passage)", 
+    year: "1494", 
+    lat: 18.3599, 
+    lng: -67.8113, 
+    wiki: "Mona_Passage", 
+    cat: "2. SEFER", 
+    desc: "Hispaniola ve Porto Riko arasındaki kritik su yolu. Seferin son aşamasına girildi." 
   },
-  {
-    name: "The Getty Center",
-    lat: 34.0780,
-    lng: -118.4741,
-    wiki: "Getty_Center",
-    type: "Sanat Müzesi",
-    loc: "ABD, Los Angeles",
-    year: "1997",
-    desc: "Sanat koleksiyonları ve modern mimarisiyle ünlü."
-  },
-  {
-    name: "Museum Island (Museumsinsel)",
-    lat: 52.5169,
-    lng: 13.4010,
-    wiki: "Museum_Island",
-    type: "Müze Kompleksi",
-    loc: "Almanya, Berlin",
-    year: "1830",
-    desc: "Berlin'deki beş büyük müzeyi kapsayan kültür kompleksi."
-  },
-  {
-    name: "National Museum of Korea",
-    lat: 37.5236,
-    lng: 126.9804,
-    wiki: "National_Museum_of_Korea",
-    type: "Tarih ve Sanat Müzesi",
-    loc: "Güney Kore, Seul",
-    year: "1945",
-    desc: "Kore tarihini ve kültürünü sergileyen büyük müze."
-  },
-  {
-    name: "Shanghai Museum",
-    lat: 31.2304,
-    lng: 121.4737,
-    wiki: "Shanghai_Museum",
-    type: "Sanat ve Tarih Müzesi",
-    loc: "Çin, Şangay",
-    year: "1952",
-    desc: "Çin sanatının önemli koleksiyonlarına ev sahipliği yapar."
-  },
-  {
-    name: "National Museum of Natural History (Smithsonian)",
-    lat: 38.8913,
-    lng: -77.0261,
-    wiki: "National_Museum_of_Natural_History",
-    type: "Doğa Tarihi Müzesi",
-    loc: "ABD, Washington D.C.",
-    year: "1910",
-    desc: "Dünyanın en büyük doğa tarihi müzelerinden biri."
-  },
-  {
-    name: "Museo Nacional del Prado",
-    lat: 40.4138,
-    lng: -3.6921,
-    wiki: "Museo_Nacional_del_Prado",
-    type: "Sanat Müzesi",
-    loc: "İspanya, Madrid",
-    year: "1819",
-    desc: "İspanyol sanatının en önemli koleksiyonlarından biri."
-  },
-  {
-    name: "National Air and Space Museum",
-    lat: 38.8882,
-    lng: -77.0199,
-    wiki: "National_Air_and_Space_Museum",
-    type: "Havacılık ve Uzay Müzesi",
-    loc: "ABD, Washington D.C.",
-    year: "1946",
-    desc: "Dünyanın en çok ziyaret edilen havacılık müzelerinden biri."
-  },
-  {
-    name: "Musée d'Orsay",
-    lat: 48.8600,
-    lng: 2.3266,
-    wiki: "Musée_d'Orsay",
-    type: "Sanat Müzesi",
-    loc: "Fransa, Paris",
-    year: "1986",
-    desc: "19. yüzyıl sanatının en önemli koleksiyonlarına sahip."
-  },
-  {
-    name: "National Museum of Scotland",
-    lat: 55.9469,
-    lng: -3.1900,
-    wiki: "National_Museum_of_Scotland",
-    type: "Tarih ve Kültür Müzesi",
-    loc: "İskoçya, Edinburgh",
-    year: "1866",
-    desc: "İskoçya'nın tarihini ve kültürünü anlatan büyük müze."
-  },
-  {
-    name: "Museum of Fine Arts, Boston",
-    lat: 42.3394,
-    lng: -71.0940,
-    wiki: "Museum_of_Fine_Arts,_Boston",
-    type: "Sanat Müzesi",
-    loc: "ABD, Boston",
-    year: "1870",
-    desc: "Amerika'nın en eski ve en büyük sanat müzelerinden biri."
-  },
-  {
-    name: "National Museum of Australia",
-    lat: -35.2967,
-    lng: 149.1269,
-    wiki: "National_Museum_of_Australia",
-    type: "Tarih ve Kültür Müzesi",
-    loc: "Avustralya, Canberra",
-    year: "2001",
-    desc: "Avustralya tarihini ve kültürünü anlatan modern müze."
-  },
-  {
-    name: "Art Institute of Chicago",
-    lat: 41.8796,
-    lng: -87.6237,
-    wiki: "Art_Institute_of_Chicago",
-    type: "Sanat Müzesi",
-    loc: "ABD, Chicago",
-    year: "1879",
-    desc: "Amerika'nın en büyük ve en eski sanat müzelerinden biri."
-  },
-  {
-    name: "National Museum of Anthropology (Mexico City)",
-    lat: 19.4260,
-    lng: -99.1860,
-    wiki: "National_Museum_of_Anthropology_(Mexico_City)",
-    type: "Antropoloji Müzesi",
-    loc: "Meksika, Mexico City",
-    year: "1964",
-    desc: "Meksika'nın zengin tarihini ve kültürünü sergiler."
-  },
-  {
-    name: "Museum of Islamic Art, Doha",
-    lat: 25.2854,
-    lng: 51.5310,
-    wiki: "Museum_of_Islamic_Art,_Doha",
-    type: "Sanat Müzesi",
-    loc: "Katar, Doha",
-    year: "2008",
-    desc: "İslam sanatının en büyük koleksiyonlarından birine sahip modern müze."
-  },
-  {
-    name: "National Gallery of Victoria",
-    lat: -37.8220,
-    lng: 144.9688,
-    wiki: "National_Gallery_of_Victoria",
-    type: "Sanat Müzesi",
-    loc: "Avustralya, Melbourne",
-    year: "1861",
-    desc: "Avustralya'nın en eski ve en büyük sanat müzesi."
-  },
-  {
-    name: "Pergamon Museum",
-    lat: 52.5212,
-    lng: 13.3969,
-    wiki: "Pergamon_Museum",
-    type: "Arkeoloji Müzesi",
-    loc: "Almanya, Berlin",
-    year: "1930",
-    desc: "Antik çağ eserlerinin sergilendiği önemli müze."
-  },
-  {
-    name: "National Museum of Western Art",
-    lat: 35.7138,
-    lng: 139.7745,
-    wiki: "National_Museum_of_Western_Art",
-    type: "Sanat Müzesi",
-    loc: "Japonya, Tokyo",
-    year: "1959",
-    desc: "Batı sanatının önemli koleksiyonlarına ev sahipliği yapar."
-  },
-  {
-    name: "Centre Pompidou",
-    lat: 48.8606,
-    lng: 2.3522,
-    wiki: "Centre_Pompidou",
-    type: "Modern Sanat Müzesi",
-    loc: "Fransa, Paris",
-    year: "1977",
-    desc: "Modern ve çağdaş sanatın en önemli merkezlerinden biri."
-  },
-  {
-    name: "Museum of the Egyptian Antiquities",
-    lat: 30.0477,
-    lng: 31.2336,
-    wiki: "Egyptian_Museum",
-    type: "Arkeoloji Müzesi",
-    loc: "Mısır, Kahire",
-    year: "1902",
-    desc: "Dünyanın en önemli antik Mısır koleksiyonlarından birine sahip."
-  },
-  {
-    name: "National Museum of African Art",
-    lat: 38.888,  
-    lng: -77.0255,
-    wiki: "National_Museum_of_African_Art",
-    type: "Sanat Müzesi",
-    loc: "ABD, Washington D.C.",
-    year: "1987",
-    desc: "Afrika sanatına odaklanan önemli müze."
-  },
-  {
-    name: "Pushkin State Museum of Fine Arts",
-    lat: 55.7520,
-    lng: 37.6156,
-    wiki: "Pushkin_State_Museum_of_Fine_Arts",
-    type: "Sanat Müzesi",
-    loc: "Rusya, Moskova",
-    year: "1912",
-    desc: "Rusya'nın en büyük sanat müzelerinden biri."
-  },
-  {
-    name: "Museum of Modern Art, New York",
-    lat: 40.7614,
-    lng: -73.9776,
-    wiki: "Museum_of_Modern_Art",
-    type: "Modern Sanat Müzesi",
-    loc: "ABD, New York",
-    year: "1929",
-    desc: "Modern sanatın en önemli koleksiyonlarından birine sahiptir."
-  },
-  {
-    name: "National Museum of American History",
-    lat: 38.8913,
-    lng: -77.0300,
-    wiki: "National_Museum_of_American_History",
-    type: "Tarih Müzesi",
-    loc: "ABD, Washington D.C.",
-    year: "1964",
-    desc: "Amerikan tarihine dair geniş koleksiyonları içerir."
-  },
-  {
-    name: "Royal Ontario Museum",
-    lat: 43.6677,
-    lng: -79.3948,
-    wiki: "Royal_Ontario_Museum",
-    type: "Tarih ve Doğa Müzesi",
-    loc: "Kanada, Toronto",
-    year: "1914",
-    desc: "Kanada'nın en büyük müzelerinden biri."
-  },
-  {
-    name: "Museum of Fine Arts, Houston",
-    lat: 29.7300,
-    lng: -95.3900,
-    wiki: "Museum_of_Fine_Arts,_Houston",
-    type: "Sanat Müzesi",
-    loc: "ABD, Houston",
-    year: "1900",
-    desc: "Texas'ın en büyük sanat müzesi."
-  }
-    ];
+  
+   { name: "Cádiz Limanı", year: "1493", lat:36.69356623637789, lng: -6.816330228758719, wiki: "Cádiz", cat: "2. SEFER", desc: "2. seferin son durağı" },
+  
+ 
 
-  const map = L.map("map").setView([30, 35], 2);
+ 
+  
+  
+  
+  
+  
+   
+  
+   
+    { name: "Tordesillas Hattı", year: "1494", lat: 25.0000, lng: -46.0000, wiki: "Tordesillas_Antlaşması", cat: "DİPLOMASİ", desc: "İspanya ve Portekiz arasında yeni keşfedilen toprakların paylaşımı için belirlenen sınır hattı." },
+    
+  { name: "Altın Haraç Sistemi", year: "1495", lat: 19.8894, lng: -71.0805, wiki: "Encomienda", cat: "SÖMÜRGECİLİK", desc: "Yerlilerden zorla altın alınması ve ellerin kesilmesi gibi cezalar uygulanması." },
+   { 
+    name: "Sanlúcar", 
+    year: "1498", 
+    lat: 36.7781, 
+    lng: -6.3531, 
+    wiki: "Sanlúcar_de_Barrameda", 
+    cat: "3. SEFER", 
+    desc: "Mayıs 1498: Altı gemiyle Güney Amerika'ya doğru yola çıkıldı." 
+  },
+  { 
+    name: "Madeira Adaları", 
+    year: "1498", 
+    lat: 32.7604, 
+    lng: -16.9595, 
+    wiki: "Madeira", 
+    cat: "3. SEFER", 
+    desc: "Portekiz adalarında ikmal ve su takviyesi." 
+  },
+  { 
+    name: "Kanarya Adaları (3. Sefer)", 
+    year: "1498", 
+    lat: 28.2916, 
+    lng: -16.6291, 
+    wiki: "Canary_Islands", 
+    cat: "3. SEFER", 
+    desc: "Geleneksel durak" 
+  },
+  { 
+    name: "Cape Verde (Yeşil Burun)", 
+    year: "1498", 
+    lat: 14.9177, 
+    lng: -23.5092, 
+    wiki: "Cape_Verde", 
+    cat: "3. SEFER", 
+    desc: "En güneydeki çıkış noktası. Buradan sonra açık okyanusa, ekvator çizgisine doğru ilerlendi." 
+  },
+  { 
+    name: "Trinidad Adası", 
+    year: "1498", 
+    lat: 10.4500, 
+    lng: -61.2000, 
+    wiki: "Trinidad", 
+    cat: "3. SEFER", 
+    desc: "Ağustos 1498: Üç tepeli bir dağ gördüğü için adaya 'Üçleme' (Trinidad) adını verdi." 
+  },
+{ 
+    name: "Orinoco Etkisi (Paria Körfezi)", 
+    year: "1498", 
+    lat: 10.0500, // Trinidad'ın hemen güney batısı, körfez girişi
+    lng: -61.9000, 
+    wiki: "Orinoco", 
+    cat: "3. SEFER", 
+    desc: "Okyanus suyunun aniden tatlılaşmasıyla devasa bir nehrin (Orinoco) varlığı keşfedildi." 
+  },
+  { 
+    name: "Boca del Drago (Ejderha Ağzı)", 
+    year: "1498", 
+    lat: 10.7500, 
+    lng: -61.8500, 
+    wiki: "Gulf_of_Paria", 
+    cat: "3. SEFER", 
+    desc: "Trinidad ile Güney Amerika (Venezuela) arasındaki dar geçit. Kolomb burada devasa tatlı su akıntısını (Orinoco) keşfetti." 
+  },
+  
+  { 
+    name: "Margarita ve Paria", 
+    year: "1498", 
+    lat: 10.9971, 
+    lng: -63.9113, 
+    wiki: "Isla_Margarita", 
+    cat: "3. SEFER", 
+    desc: "İncileriyle ünlü Margarita Adası ve ana kara kıyıları keşfedildi." 
+  },
+  { 
+    name: "Hispaniola Güneyi", 
+    year: "1498", 
+    lat: 17.5000, 
+    lng: -71.5000, 
+    wiki: "Hispaniola", 
+    cat: "3. SEFER", 
+    desc: "Güneyden yaklaşılarak adanın güney sahilleri boyunca ilerlendi." 
+  },
 
-    L.tileLayer(
-      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {
-        maxZoom: 19,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      }
-    ).addTo(map);
+  { 
+    name: "Santo Domingo", 
+    year: "1500", 
+    lat: 18.4861, 
+    lng: -69.9312, 
+    wiki: "Santo_Domingo", 
+    cat: "3. SEFER", 
+    desc: "Kolomb, buradaki isyanlar ve kötü yönetim suçlamalarıyla tutuklanarak zincire vurulmuş halde İspanya'ya gönderildi." 
+  },
+    { 
+    name: "Mona Geçidi (Mona Passage)", 
+    year: "1498", 
+    lat: 18.3599, 
+    lng: -67.8113, 
+    wiki: "Mona_Passage", 
+    cat: "3. SEFER", 
+    desc: "Seferin sonunda Porto Riko ile Hispaniola arasındaki bu geçitten geçerek merkeze ulaşıldı." 
+  },
+  { 
+    name: "Cádiz (Dönüş)", 
+    year: "1500", 
+    lat: 36.5271, 
+    lng: -6.2886, 
+    wiki: "Cádiz", 
+    cat: "3. SEFER", 
+    desc: "Ekim 1500: Kolomb, zincire vurulmuş bir mahkum olarak İspanya'ya döndü. Daha sonra Kraliçe tarafından serbest bırakıldı." 
+  },
+  
+{ name: "Sanlúcar / Cádiz", year: "1502", lat: 36.7780, lng: -6.3530, wiki: "Cádiz", cat: "4. SEFER", desc: "9 Mayıs 1502: Kolomb son seferine 4 gemi ve 140 kişiyle başladı." },
+    { 
+    name: "Kanarya Adaları (4. Sefer)", 
+    year: "1502", 
+    lat: 28.2916, 
+    lng: -16.6291, 
+    wiki: "Canary_Islands", 
+    cat: "4. SEFER", 
+    desc: "Geleneksel durak" 
+  },
 
-    const select = document.getElementById("museumSelect");
+{ name: "Martinique (Mantinuqe)", year: "1502", lat: 14.6415, lng: -61.0242, wiki: "Martinique", cat: "4. SEFER", desc: "Haziran 1502: Atlantik geçişi sonrası Yeni Dünya'daki ilk durak." },
 
-    // İkon tanımları
-    const defaultIcon = L.divIcon({
-      className: "museum-marker",
-      html: '<i>🏛️</i>',
-    });
-    const selectedIcon = L.divIcon({
-      className: "museum-marker-selected",
-      html: '<i>🏛️</i>',
+{ name: "Santo Domingo'ya Alınmama", year: "1502", lat: 17.088416011635374, lng: -69.72480437374125, wiki: "Santo_Domingo", cat: "4. SEFER", desc: "Haziran 1502: Vali Ovando tarafından limana alınmadı; açık denizde kasırgadan kurtuldu." },  
+  
+  { name: "Las Tortugas (Cayman)", year: "1503", lat: 19.7692, lng: -79.8709, wiki: "Cayman_Islands", cat: "4. SEFER", desc: "Mayıs 1503: Panama'dan dönerken akıntıyla kuzeye savrulup Cayman Adaları'ndan geçiş." },
+
+{ 
+    name: "Honduras (Guanaja)", 
+    year: "1502", 
+    lat: 16.4761, 
+    lng: -85.8941, 
+    wiki: "Guanaja", 
+    cat: "4. SEFER", 
+    desc: "Temmuz 1502: Jamaika'nın kuzeyinden geçip Orta Amerika anakarasına ulaştı; Maya tüccarlarıyla karşılaştı." 
+  },
+  { 
+    name: "Nikaragua (Cabo Gracias a Dios)", 
+    year: "1502", 
+    lat: 15.0016, 
+    lng: -83.1476, 
+    wiki: "Cape_Gracias_a_Dios", 
+    cat: "4. SEFER", 
+    desc: "Eylül 1502: Fırtınalı bir geçişin ardından kıyı hattının güneye döndüğü nokta. Kolomb kurtulduğu için 'Tanrıya Şükür' ismini verdi." 
+  },
+  { 
+    name: "Kosta Rika (Cariay)", 
+    year: "1502", 
+    lat: 9.9913, 
+    lng: -83.0267, 
+    wiki: "Puerto_Limón", 
+    cat: "4. SEFER", 
+    desc: "Eylül 1502: Yerlilerle ilk kez altın takasının yapıldığı bölge (Modern Puerto Limón)." 
+  },
+  { 
+    name: "Isla Bastimentos (Bocas del Toro)", 
+    year: "1502", 
+    lat: 9.3448, 
+    lng: -82.2452, 
+    wiki: "Bocas_del_Toro_Archipelago", 
+    cat: "4. SEFER", 
+    desc: "Ekim 1502: Panama kıyılarında gemi bakımı yapıldı ve yerlilerden altın takas edildi." 
+  },
+  { 
+    name: "Portobelo", 
+    year: "1502", 
+    lat: 9.5585, 
+    lng: -79.6625, 
+    wiki: "Portobelo,_Panama", 
+    cat: "4. SEFER", 
+    desc: "Kasım 1502: Kolomb'un 'Güzel Liman' adını verdiği korunaklı ana liman." 
+  },
+  { 
+    name: "Retrete (Panama)", 
+    year: "1502", 
+    lat: 9.4518, 
+    lng: -78.6715, 
+    wiki: "Panama", 
+    cat: "4. SEFER", 
+    desc: "Kasım 1502: Panama'da ulaşılan en uç nokta; buradan geri dönüş ve kuzeye savrulma başladı." 
+  },
+
+
+{ name: "Jamaika (Kuzey Sahili)", year: "1503", lat: 18.5736, lng: -78.0598, wiki: "Jamaica", cat: "4. SEFER", desc: "Haziran 1503: Gemi kurtları nedeniyle delinen gemilerin karaya oturduğu yer; 1 yıl mahsur kaldı." },
+
+{ name: "Mona Geçidi", year: "1504", lat: 18.3142, lng: -67.8999, wiki: "Mona_Passage", cat: "4. SEFER", desc: "Eylül 1504: Jamaika'dan kurtarılıp Santo Domingo üzerinden İspanya'ya dönüş rotası." },
+  { name: "Sanlúcar de Barrameda (Final)", year: "1504", lat: 36.7850, // 36.7781 -> 36.7850 (Hafif kuzey)
+  lng: -6.3400, wiki: "Sanlúcar_de_Barrameda", cat: "4. SEFER", desc: "7 Kasım 1504: Kolomb'un son seferinden bitkin ve hasta halde İspanya'ya kesin dönüşü." },
+  
+    { name: "İlk Köle Sevkiyatı", year: "1505", lat: 18.5000, lng: -70.0000, wiki: "Atlantic_slave_trade", cat: "SÖMÜRGECİLİK", desc: "Trajik köle ticaretinin başlangıcı." },
+    { name: "Valladolid", year: "1506", lat: 41.6523, lng: -4.7245, wiki: "Christopher_Columbus", cat: "ÖLÜM", desc: "Büyük kaşifin hayata gözlerini yumması." },
+];
+
+const map = L.map('map', { zoomControl: false }).setView([20, -40], 3);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+
+const select = document.getElementById('eventSelect');
+const playBtn = document.getElementById('playRouteBtn');
+let currentLines = [];
+let markerNodes = [];
+let isPlaying = false;
+
+// UI Başlatma
+function init() {
+    // Kategori bazlı sayaç objesi
+    const categoryCounters = {};
+
+    dataSet.forEach((d, i) => {
+        // Kategori daha önce görülmediyse sayacı 1 yap, varsa 1 arttır
+        if (!categoryCounters[d.cat]) {
+            categoryCounters[d.cat] = 1;
+        } else {
+            categoryCounters[d.cat]++;
+        }
+
+        // Marker oluştururken mevcut kategori sayısını kullan
+        const m = createMarker(d, i, categoryCounters[d.cat]);
+        markerNodes.push(m);
+        
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `${d.cat}: ${d.name}`;
+        document.getElementById('pointGroup').appendChild(opt);
     });
 
-    let selectedMarker = null; // Seçili marker referansı
-
-    // Markerları ve dropdown seçeneklerini oluştur
-    museumData.forEach((item) => {
-      const marker = L.marker([item.lat, item.lng], { icon: defaultIcon }).addTo(map);
-
-      const opt = document.createElement("option");
-      opt.value = item.name;
-      opt.textContent = `${item.loc} | ${item.name}`;
-      select.appendChild(opt);
-
-      marker.on("click", () => {
-        select.value = item.name;
-        updateSelection(marker, item);
-      });
-
-      item._marker = marker; // Kolay erişim için item objesine marker referansı ekle
+    ["1. SEFER", "2. SEFER", "3. SEFER", "4. SEFER"].forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = "ROUTE_" + s;
+        opt.textContent = `🚢 ${s}`;
+        document.getElementById('routeGroup').appendChild(opt);
     });
 
-    // Dropdown değişimi
-    select.onchange = (e) => {
-      const item = museumData.find((d) => d.name === e.target.value);
-      if (item && item._marker) {
-        updateSelection(item._marker, item);
-      }
-    };
+    // İLK AÇILIŞ: 1. SEFER
+    drawRoute("1. SEFER");
+    updateUI(dataSet[0]);
+}
 
-    // Seçim güncelleme fonksiyonu
-    function updateSelection(marker, item) {
-      // Önceki seçili marker varsa eski ikonuna döndür
-      if (selectedMarker && selectedMarker !== marker) {
-        selectedMarker.setIcon(defaultIcon);
-      }
+function createMarker(d, globalIndex, categoryIndex) {
+    const color = colors[d.cat] || "#333";
+    const m = L.marker([d.lat, d.lng], {
+        icon: L.divIcon({
+            className: 'custom-icon',
+            html: `<div class="compass-marker" style="border-color:${color}; color:${color}; width:22px; height:22px; font-size:10px;">${categoryIndex}</div>`
+        })
+    });
+    
+    m.bindTooltip(d.name, { 
+        permanent: true, 
+        direction: 'top', 
+        className: 'marker-label', 
+        offset: [0, -10] 
+    });
+    
+    m.category = d.cat;
+    m.on('click', () => updateUI(d));
+    return m;
+}
 
-      // Yeni seçili markerı farklı ikonla göster
-      marker.setIcon(selectedIcon);
-      selectedMarker = marker;
+async function updateUI(d) {
+    document.getElementById('event-title').textContent = d.name;
+    document.getElementById('event-desc').textContent = d.desc;
+    const chip = document.getElementById('voyage-chip');
+    chip.textContent = d.cat;
+    chip.style.background = colors[d.cat];
+    
+    if (window.innerWidth < 1024) document.querySelector('.content-scroll').scrollTo(0,0);
 
-      // Haritayı seçili marker konumuna uçur
-      map.flyTo(marker.getLatLng(), 13);
+    const wikiBox = document.getElementById('wiki-box');
+    const wikiImg = document.getElementById('event-img');
+    wikiBox.textContent = "Bilgi getiriliyor...";
 
-      // Bilgi panelini güncelle
-      updatePanel(item);
-    }
-
-    // Wikipedia ve panel güncelleme fonksiyonu
-    async function translateToTR(text) {
-      try {
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=tr&dt=t&q=${encodeURIComponent(
-          text
-        )}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        return data[0].map((x) => x[0]).join("");
-      } catch (e) {
-        return text;
-      }
-    }
-
-    async function updatePanel(item) {
-      document.getElementById("museum-title").textContent = item.name;
-      document.getElementById("type-box").style.display = "inline-flex";
-      document.getElementById("museum-type").textContent = item.type;
-      document.getElementById("museum-stats").style.display = "grid";
-      document.getElementById("stat-loc").textContent = item.loc;
-      document.getElementById("stat-year").textContent = item.year;
-
-      const textEl = document.getElementById("museum-text");
-      textEl.innerHTML = `<strong>Müze Hakkında:</strong> ${item.desc}<br><br><span id="summary" style="opacity:0.6;">Bilgiler aranıyor...</span>`;
-
-      const imgEl = document.getElementById("museum-img");
-      const linkEl = document.getElementById("wiki-link");
-      imgEl.style.display = "none";
-      linkEl.style.display = "none";
-
-      try {
-        let res = await fetch(
-          `https://tr.wikipedia.org/api/rest_v1/page/summary/${item.wiki}`
-        );
+    try {
+        // 1. ADIM: Türkçe Wikipedia'yı dene
+        let res = await fetch(`https://tr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(d.wiki)}`);
         let data = await res.json();
 
-        if (data.extract && data.type !== "disambiguation") {
-          renderWiki(data, false);
+        // Eğer Türkçe bulunamazsa veya özet çok kısaysa (hata verdiyse)
+        if (data.type === "disambiguation" || data.status === 404 || !data.extract) {
+            console.log("Türkçe bulunamadı, İngilizce aranıyor...");
+            
+            // 2. ADIM: İngilizce Wikipedia'yı dene
+            let enRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(d.wiki)}`);
+            let enData = await enRes.json();
+
+            if (enData.extract) {
+                // 3. ADIM: İngilizce metni Türkçeye çevir
+                wikiBox.textContent = "Tercüme ediliyor...";
+                const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(enData.extract)}&langpair=en|tr`);
+                const transData = await transRes.json();
+                
+                wikiBox.textContent = transData.responseData.translatedText + " (İngilizce'den çevrildi)";
+                
+                // Resmi İngilizce maddeden al
+                if (enData.thumbnail) {
+                    wikiImg.src = enData.thumbnail.source;
+                    wikiImg.style.display = "block";
+                }
+            } else {
+                wikiBox.textContent = "Maalesef iki dilde de ayrıntılı bilgi bulunamadı.";
+                wikiImg.style.display = "none";
+            }
         } else {
-          throw new Error("Türkçe bulunamadı");
+            // Türkçe veri varsa doğrudan yazdır
+            wikiBox.textContent = data.extract;
+            if (data.thumbnail) {
+                wikiImg.src = data.thumbnail.source;
+                wikiImg.style.display = "block";
+            } else {
+                wikiImg.style.display = "none";
+            }
         }
-      } catch (e) {
-        try {
-          let resEn = await fetch(
-            `https://en.wikipedia.org/api/rest_v1/page/summary/${item.wiki}`
-          );
-          let dataEn = await resEn.json();
-
-          if (dataEn.extract) {
-            const translatedTxt = await translateToTR(dataEn.extract);
-            dataEn.extract = translatedTxt;
-            renderWiki(dataEn, true);
-          } else {
-            document.getElementById("summary").textContent = "Bilgiye ulaşılamadı.";
-          }
-        } catch (err) {
-          document.getElementById("summary").textContent = "Bağlantı hatası.";
-        }
-      }
-
-      function renderWiki(data, isTranslated) {
-        const summaryEl = document.getElementById("summary");
-        summaryEl.style.opacity = "1";
-        summaryEl.innerHTML =
-          (isTranslated ? '<span class="translation-info">ℹ️ Otomatik Çeviri</span><br>' : "") +
-          data.extract;
-
-        if (data.thumbnail) {
-          imgEl.src = data.thumbnail.source;
-          imgEl.style.display = "block";
-        }
-
-        linkEl.href = data.content_urls.desktop.page;
-        linkEl.style.display = "block";
-        linkEl.textContent = isTranslated ? "KAYNAĞI GÖR (EN)" : "DETAYLI BİLGİ";
-      }
+    } catch (err) {
+        console.error("Wiki Hatası:", err);
+        wikiBox.textContent = "Bilgi yüklenirken bir hata oluştu.";
     }
-  </script>
+
+   map.flyTo([d.lat, d.lng], 7, {
+    duration: 4,        // Toplam uçuş süresi
+    noMoveStart: true,  // Hareket başladığında olay tetiklemeyi durdurur (performans için)
+    easeLinearity: 0.1, // Düşük değerler başlangıç ve bitişi daha yumuşak yapar
+});
+}
+
+select.onchange = (e) => {
+    const val = e.target.value;
+    isPlaying = false;
+    if (val.startsWith("ROUTE_")) {
+        const cat = val.replace("ROUTE_", "");
+        drawRoute(cat);
+        const firstPoint = dataSet.find(d => d.cat === cat);
+        if(firstPoint) updateUI(firstPoint);
+    } else if (val === "RESET") {
+        resetMap();
+    } else {
+        updateUI(dataSet[val]);
+    }
+};
+
+function drawRoute(cat) {
+    currentLines.forEach(l => map.removeLayer(l));
+    markerNodes.forEach(m => m.category === cat ? m.addTo(map) : map.removeLayer(m));
+    
+    const pts = dataSet.filter(d => d.cat === cat).map(d => [d.lat, d.lng]);
+    const poly = L.polyline(pts, { color: colors[cat], weight: 3, dashArray: '5, 10' }).addTo(map);
+    currentLines.push(poly);
+    map.fitBounds(poly.getBounds(), { padding: [30, 30] });
+}
+
+function resetMap() {
+    currentLines.forEach(l => map.removeLayer(l));
+    markerNodes.forEach(m => m.addTo(map));
+    map.setView([20, -40], 3);
+}
+
+// Sinematik Oynatma
+playBtn.addEventListener('click', async () => {
+    const activeCat = document.getElementById('voyage-chip').textContent;
+    if (isPlaying || !activeCat) return;
+    isPlaying = true;
+    playBtn.disabled = true;
+    
+    const points = dataSet.filter(d => d.cat === activeCat);
+    for (const p of points) {
+        if(!isPlaying) break;
+        await updateUI(p);
+        await new Promise(r => setTimeout(r, 4500));
+    }
+    
+    playBtn.disabled = false;
+    isPlaying = false;
+});
+
+init();
+</script>
 </body>
 </html>
     
