@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Müzeler Atlası</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Müzeler Atlası</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --steel-blue: #2c3e50;
+      --museum-gold: #f39c12;
+      --concrete-grey: #ecf0f1;
+      --gallery-blue: #34495e;
+      --danger-red: #e74c3c;
+    }
+
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: "Segoe UI", sans-serif;
+      background: var(--concrete-grey);
+      overflow: hidden;
+    }
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+    }
+    @media (min-width: 768px) {
+      .app-container {
+        flex-direction: row;
+      }
+    }
+
+    #map {
+      flex: 1;
+      width: 100%;
+      z-index: 1;
+      background: #95a5a6;
+    }
+
+ #info-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-left: 6px solid var(--museum-gold);
+  box-shadow: -5px 0 25px rgba(0, 0, 0, 0.2);
+}
+    .header, .search-area {
+  flex-shrink: 0;
+}
+
+#content-area {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 25px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Vikipedi butonunun alt kısmı hep görünür olsun */
+#wiki-link {
+  margin-top: auto;
+  display: block;
+}
+
+    @media (min-width: 768px) {
+      #info-panel {
+        width: 450px;
+        height: 100%;
+        border-left: 6px solid var(--museum-gold);
+      }
+    }
+@media (max-width: 767px) {
+  .app-container {
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  #map {
+    height: 50vh; /* Harita yüksekliği yarı ekran */
+    flex: none;   /* flex-grow kapat */
+  }
+
+  #info-panel {
+    height: 50vh; /* Panel yüksekliği yarı ekran */
+    overflow-y: auto; /* İçerik scroll */
+    border-left: none;
+    box-shadow: none;
+  }
+
+  #content-area {
+    flex: none;
+    padding-bottom: 60px; /* Buton için boşluk */
+  }
+
+  #wiki-link {
+    position: sticky;
+    bottom: 0;
+    width: 100%;
+    margin-top: 0;
+    z-index: 10;
+    background: var(--steel-blue);
+    padding: 15px 0;
+    text-align: center;
+    border-radius: 0 0 6px 6px;
+    display: block !important;
+  }
+}
+
+    .header {
+      background: var(--steel-blue);
+      color: white;
+      padding: 15px;
+      text-align: center;
+      border-bottom: 4px solid var(--museum-gold);
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 2px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .search-area {
+      padding: 12px;
+      background: #fdfdfd;
+      border-bottom: 1px solid #ddd;
+    }
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+      font-weight: 600;
+    }
+
+    #content-area {
+      padding: 25px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    #museum-title {
+      margin: 0;
+      color: var(--steel-blue);
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .museum-badge {
+      margin: 12px 0;
+      display: inline-flex;
+      align-items: center;
+      background: #fff3e0;
+      color: #e67e22;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      border: 1px solid #ffcc80;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .stat-item {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 6px;
+      border-bottom: 2px solid #ddd;
+    }
+    .stat-label {
+      font-size: 10px;
+      color: #7f8c8d;
+      text-transform: uppercase;
+      display: block;
+    }
+    .stat-value {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--steel-blue);
+    }
+
+    .details-box {
+      font-size: 15px;
+      color: #333;
+      line-height: 1.7;
+      margin-top: 20px;
+    }
+
+    #museum-img {
+      width: 100%;
+      border-radius: 8px;
+      margin-top: 20px;
+      display: none;
+      object-fit: cover;
+      max-height: 250px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn {
+      display: block;
+      margin-top: 25px;
+      padding: 15px;
+      background: var(--steel-blue);
+      color: white;
+      text-decoration: none;
+      text-align: center;
+      border-radius: 6px;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    .btn:hover {
+      background: var(--museum-gold);
+      color: white;
+    }
+
+    .translation-info {
+      font-size: 11px;
+      color: #d32f2f;
+      background: #ffebee;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      display: inline-block;
+      font-weight: bold;
+    }
+
+    /* Normal marker */
+    .museum-marker {
+      width: 30px !important;
+      height: 30px !important;
+      background: var(--steel-blue);
+      border: 2px solid var(--museum-gold);
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+    }
+    .museum-marker i {
+      transform: rotate(45deg);
+      color: white;
+      font-size: 14px;
+      user-select: none;
+    }
+
+    /* Seçilen marker */
+    .museum-marker-selected {
+      width: 34px !important;
+      height: 34px !important;
+      background: #e67e22; /* Turuncu ton */
+      border: 2px solid #c55a11;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 14px rgba(230, 126, 34, 0.8);
+      cursor: pointer;
+    }
+    .museum-marker-selected i {
+      transform: rotate(45deg);
+      color: white;
+      font-size: 16px;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="map"></div>
+    <div id="info-panel">
+      <div class="header">
+        <h1>Müzeler Atlası</h1>
+      </div>
+      <div class="search-area">
+        <select id="museumSelect">
+          <option value="">Bir Müze Seçin...</option>
+        </select>
+      </div>
+      <div id="content-area">
+        <h2 id="museum-title">Kültürün Zirvesine Yolculuk</h2>
+        <div id="type-box" style="display:none;" class="museum-badge">
+          MÜZE TÜRÜ: <span id="museum-type" style="margin-left:5px;"></span>
+        </div>
+        <div class="stats-grid" id="museum-stats" style="display:none;">
+          <div class="stat-item">
+            <span class="stat-label">Konum</span>
+            <span class="stat-value" id="stat-loc">-</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Kuruluş Yılı</span>
+            <span class="stat-value" id="stat-year">-</span>
+          </div>
+        </div>
+        <img id="museum-img" src="" alt="Müze Görseli" />
+        <div id="museum-text" class="details-box">
+          Dünyanın en büyük ve etkileyici müzelerini keşfetmek için haritadaki noktalara tıklayın veya listeden seçim yapın.
+        </div>
+        <a id="wiki-link" href="#" target="_blank" class="btn" style="display:none;">DETAYLI BİLGİ</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Örnek Müze Verisi (kısaltılmış, tam listeyi yukarıdaki gibi ekleyin)
+    const museumData = [
+         {
+    name: "İstanbul Arkeoloji Müzeleri",
+    lat: 41.011667,
+    lng: 28.981389 , 
+    wiki: "İstanbul_Arkeoloji_Müzeleri",
+    type: "Arkeoloji Müzesi",
+    loc: "Türkiye, İstanbul",
+    year: "1891",
+    desc: "Türkiye’nin en kapsamlı arkeoloji müzesi, zengin koleksiyonlarıyla dünya çapında tanınır."
+  },
+  {
+    name: "Topkapı Sarayı Müzesi",
+    lat:  41.013056,
+    lng: 28.983889,
+    wiki: "Topkapı_Sarayı",
+    type: "Tarih Müzesi",
+    loc: "Türkiye, İstanbul",
+    year: "1924",
+    desc: "Osmanlı İmparatorluğu'nun eski sarayı ve şimdi büyük bir müze kompleksi."
+  },
+  {
+    name: "Anadolu Medeniyetleri Müzesi",
+    lat: 39.938333,
+    lng: 32.861944,  
+    wiki: "Anadolu_Medeniyetleri_Müzesi",
+    type: "Arkeoloji Müzesi",
+    loc: "Türkiye, Ankara",
+    year: "1921",
+    desc: "Anadolu’nun zengin tarihini sergileyen Türkiye’nin en önemli müzelerinden biri."
+  },
+  {
+    name: "Pera Müzesi",
+    lat: 41.031944,
+    lng: 28.975278,  
+    wiki: "Pera_Müzesi",
+    type: "Sanat Müzesi",
+    loc: "Türkiye, İstanbul",
+    year: "2005",
+    desc: "Çağdaş ve klasik sanat eserlerinin sergilendiği modern müze."
+  },
+  {
+    name: "Sakıp Sabancı Müzesi",
+    lat: 41.099167,
+    lng:29.053611, 
+    wiki: "Sakıp_Sabancı_Müzesi",
+    type: "Sanat Müzesi",
+    loc: "Türkiye, İstanbul",
+    year: "2002",
+    desc: "Türk ve İslam sanatının önemli koleksiyonlarına ev sahipliği yapar."
+  },
+  {
+    name: "Rahmi M. Koç Müzesi",
+    lat: 41.04227,
+    lng: 28.94926,
+    wiki: "Rahmi_M._Koç_Museum",
+    type: "Endüstri ve Teknoloji Müzesi",
+    loc: "Türkiye, İstanbul",
+    year: "1994",
+    desc: "Sanayi, ulaşım ve iletişim tarihi üzerine zengin koleksiyonlar."
+  },
+  {
+    name: "Mevlana Müzesi",
+    lat: 37.870556,
+    lng: 32.504722 , 
+    wiki: "Mevlana_Müzesi",
+    type: "Tarih ve Kültür Müzesi",
+    loc: "Türkiye, Konya",
+    year: "1927",
+    desc: "Mevlana Celaleddin Rumi’nin türbesi ve tasavvuf kültürünün merkezi."
+  },
+
+  {
+    name: "İzmir Arkeoloji Müzesi",
+    lat: 38.413889,
+    lng: 27.128056,  
+    wiki: "İzmir_Arkeoloji_Müzesi",
+    type: "Arkeoloji Müzesi",
+    loc: "Türkiye, İzmir",
+    year: "1927",
+    desc: "Ege bölgesinin zengin arkeolojik buluntularını barındırır."
+  },
+  {
+    name: "Çanakkale Arkeoloji Müzesi",
+    lat: 40.133333,
+    lng: 26.41, 
+    wiki: "Çanakkale_Arkeoloji_Müzesi",
+    type: "Arkeoloji Müzesi",
+    loc: "Türkiye, Çanakkale",
+    year: "1960",
+    desc: "Troya ve çevresinden çıkan tarihi eserleri içerir."
+  },
+      {
+    name: "Louvre Müzesi",
+    lat: 48.8606,
+    lng: 2.3376,
+    wiki: "Louvre",
+    type: "Sanat Müzesi",
+    loc: "Fransa, Paris",
+    year: "1793",
+    desc: "Dünyanın en büyük sanat müzesi ve tarihi anıtlarından biridir."
+  },
+  {
+    name: "British Museum",
+    lat: 51.5194,
+    lng: -0.1270,
+    wiki: "British_Museum",
+    type: "Kültür ve Tarih Müzesi",
+    loc: "İngiltere, Londra",
+    year: "1753",
+    desc: "Dünyanın en kapsamlı insanlık tarihi koleksiyonlarından birine sahip müze."
+  },
+  {
+    name: "Metropolitan Museum of Art",
+    lat: 40.7794,
+    lng: -73.9632,
+    wiki: "Metropolitan_Museum_of_Art",
+    type: "Sanat Müzesi",
+    loc: "ABD, New York",
+    year: "1870",
+    desc: "Amerika'nın en büyük sanat müzesi ve zengin koleksiyonlarıyla ünlüdür."
+  },
+  {
+    name: "Vatican Museums",
+    lat: 41.9065,
+    lng: 12.4536,
+    wiki: "Vatican_Museums",
+    type: "Sanat ve Tarih Müzesi",
+    loc: "Vatikan",
+    year: "1506",
+    desc: "Dünyanın en önemli dini sanat koleksiyonlarına ev sahipliği yapar."
+  },
+  {
+    name: "State Hermitage Museum",
+    lat: 59.9398,
+    lng: 30.3146,
+    wiki: "Hermitage_Museum",
+    type: "Sanat ve Tarih Müzesi",
+    loc: "Rusya, St. Petersburg",
+    year: "1764",
+    desc: "Dünyanın en büyük ve en eski müzelerinden biridir."
+  },
+  {
+    name: "National Gallery",
+    lat: 51.5089,
+    lng: -0.1283,
+    wiki: "National_Gallery,_London",
+    type: "Sanat Müzesi",
+    loc: "İngiltere, Londra",
+    year: "1824",
+    desc: "Batı Avrupa resim sanatının önemli eserlerini barındıran müze."
+  },
+  {
+    name: "Museo del Prado",
+    lat: 40.4138,
+    lng: -3.6921,
+    wiki: "Museo_del_Prado",
+    type: "Sanat Müzesi",
+    loc: "İspanya, Madrid",
+    year: "1819",
+    desc: "İspanyol sanatının en önemli koleksiyonlarından birine sahiptir."
+  },
+  {
+    name: "Tate Modern",
+    lat: 51.5076,
+    lng: -0.0994,
+    wiki: "Tate_Modern",
+    type: "Modern Sanat Müzesi",
+    loc: "İngiltere, Londra",
+    year: "2000",
+    desc: "Modern ve çağdaş sanatın önde gelen müzelerindendir."
+  },
+  {
+    name: "Rijksmuseum",
+    lat: 52.3599,
+    lng: 4.8852,
+    wiki: "Rijksmuseum",
+    type: "Sanat ve Tarih Müzesi",
+    loc: "Hollanda, Amsterdam",
+    year: "1800",
+    desc: "Hollanda'nın en büyük sanat ve tarih müzesi."
+  },
+  {
+    name: "Museum of Modern Art (MoMA)",
+    lat: 40.7614,
+    lng: -73.9776,
+    wiki: "Museum_of_Modern_Art",
+    type: "Modern Sanat Müzesi",
+    loc: "ABD, New York",
+    year: "1929",
+    desc: "Modern sanatın en önemli koleksiyonlarından birine sahiptir."
+  },
+  {
+    name: "National Museum of China",
+    lat: 39.9042,
+    lng: 116.4074,
+    wiki: "National_Museum_of_China",
+    type: "Tarih ve Sanat Müzesi",
+    loc: "Çin, Pekin",
+    year: "2003",
+    desc: "Çin tarihini ve kültürünü sergileyen devasa müze."
+  },
+  {
+    name: "Guggenheim Museum Bilbao",
+    lat: 43.2686,
+    lng: -2.9349,
+    wiki: "Guggenheim_Museum_Bilbao",
+    type: "Modern Sanat Müzesi",
+    loc: "İspanya, Bilbao",
+    year: "1997",
+    desc: "Çağdaş sanat ve mimarinin ikonik örneği."
+  },
+  {
+    name: "National Palace Museum",
+    lat: 25.1024,
+    lng: 121.5485,
+    wiki: "National_Palace_Museum",
+    type: "Sanat ve Tarih Müzesi",
+    loc: "Tayvan, Taipei",
+    year: "1965",
+    desc: "Çin sanatının en önemli koleksiyonlarından birine ev sahipliği yapar."
+  },
+  {
+    name: "Victoria and Albert Museum",
+    lat: 51.4966,
+    lng: -0.1722,
+    wiki: "Victoria_and_Albert_Museum",
+    type: "Sanat ve Tasarım Müzesi",
+    loc: "İngiltere, Londra",
+    year: "1852",
+    desc: "Sanat, tasarım ve dekoratif sanatlarda geniş koleksiyonları içerir."
+  },
+  {
+    name: "National Museum of Anthropology (Mexico City)",
+    lat: 19.4260,
+    lng: -99.1860,
+    wiki: "National_Museum_of_Anthropology_(Mexico_City)",
+    type: "Antropoloji Müzesi",
+    loc: "Meksika, Mexico City",
+    year: "1964",
+    desc: "Meksika'nın zengin tarihini ve kültürünü sergiler."
+  },
+
+  {
+    name: "Museo Nacional de Antropología",
+    lat: 19.4260,
+    lng: -99.1860,
+    wiki: "Museo_Nacional_de_Antropología",
+    type: "Antropoloji Müzesi",
+    loc: "Meksika, Mexico City",
+    year: "1964",
+    desc: "Meksika'nın yerli kültürlerine odaklanan büyük müze."
+  },
+  {
+    name: "Uffizi Gallery",
+    lat: 43.7687,
+    lng: 11.2559,
+    wiki: "Uffizi_Gallery",
+    type: "Sanat Müzesi",
+    loc: "İtalya, Floransa",
+    year: "1581",
+    desc: "Rönesans sanatının en önemli koleksiyonlarından biri."
+  },
+  {
+    name: "National Gallery of Art",
+    lat: 38.8913,
+    lng: -77.0199,
+    wiki: "National_Gallery_of_Art",
+    type: "Sanat Müzesi",
+    loc: "ABD, Washington D.C.",
+    year: "1937",
+    desc: "Amerika'nın başkentinde büyük sanat koleksiyonları."
+  },
+  {
+    name: "The Getty Center",
+    lat: 34.0780,
+    lng: -118.4741,
+    wiki: "Getty_Center",
+    type: "Sanat Müzesi",
+    loc: "ABD, Los Angeles",
+    year: "1997",
+    desc: "Sanat koleksiyonları ve modern mimarisiyle ünlü."
+  },
+  {
+    name: "Museum Island (Museumsinsel)",
+    lat: 52.5169,
+    lng: 13.4010,
+    wiki: "Museum_Island",
+    type: "Müze Kompleksi",
+    loc: "Almanya, Berlin",
+    year: "1830",
+    desc: "Berlin'deki beş büyük müzeyi kapsayan kültür kompleksi."
+  },
+  {
+    name: "National Museum of Korea",
+    lat: 37.5236,
+    lng: 126.9804,
+    wiki: "National_Museum_of_Korea",
+    type: "Tarih ve Sanat Müzesi",
+    loc: "Güney Kore, Seul",
+    year: "1945",
+    desc: "Kore tarihini ve kültürünü sergileyen büyük müze."
+  },
+  {
+    name: "Shanghai Museum",
+    lat: 31.2304,
+    lng: 121.4737,
+    wiki: "Shanghai_Museum",
+    type: "Sanat ve Tarih Müzesi",
+    loc: "Çin, Şangay",
+    year: "1952",
+    desc: "Çin sanatının önemli koleksiyonlarına ev sahipliği yapar."
+  },
+  {
+    name: "National Museum of Natural History (Smithsonian)",
+    lat: 38.8913,
+    lng: -77.0261,
+    wiki: "National_Museum_of_Natural_History",
+    type: "Doğa Tarihi Müzesi",
+    loc: "ABD, Washington D.C.",
+    year: "1910",
+    desc: "Dünyanın en büyük doğa tarihi müzelerinden biri."
+  },
+  {
+    name: "Museo Nacional del Prado",
+    lat: 40.4138,
+    lng: -3.6921,
+    wiki: "Museo_Nacional_del_Prado",
+    type: "Sanat Müzesi",
+    loc: "İspanya, Madrid",
+    year: "1819",
+    desc: "İspanyol sanatının en önemli koleksiyonlarından biri."
+  },
+  {
+    name: "National Air and Space Museum",
+    lat: 38.8882,
+    lng: -77.0199,
+    wiki: "National_Air_and_Space_Museum",
+    type: "Havacılık ve Uzay Müzesi",
+    loc: "ABD, Washington D.C.",
+    year: "1946",
+    desc: "Dünyanın en çok ziyaret edilen havacılık müzelerinden biri."
+  },
+  {
+    name: "Musée d'Orsay",
+    lat: 48.8600,
+    lng: 2.3266,
+    wiki: "Musée_d'Orsay",
+    type: "Sanat Müzesi",
+    loc: "Fransa, Paris",
+    year: "1986",
+    desc: "19. yüzyıl sanatının en önemli koleksiyonlarına sahip."
+  },
+  {
+    name: "National Museum of Scotland",
+    lat: 55.9469,
+    lng: -3.1900,
+    wiki: "National_Museum_of_Scotland",
+    type: "Tarih ve Kültür Müzesi",
+    loc: "İskoçya, Edinburgh",
+    year: "1866",
+    desc: "İskoçya'nın tarihini ve kültürünü anlatan büyük müze."
+  },
+  {
+    name: "Museum of Fine Arts, Boston",
+    lat: 42.3394,
+    lng: -71.0940,
+    wiki: "Museum_of_Fine_Arts,_Boston",
+    type: "Sanat Müzesi",
+    loc: "ABD, Boston",
+    year: "1870",
+    desc: "Amerika'nın en eski ve en büyük sanat müzelerinden biri."
+  },
+  {
+    name: "National Museum of Australia",
+    lat: -35.2967,
+    lng: 149.1269,
+    wiki: "National_Museum_of_Australia",
+    type: "Tarih ve Kültür Müzesi",
+    loc: "Avustralya, Canberra",
+    year: "2001",
+    desc: "Avustralya tarihini ve kültürünü anlatan modern müze."
+  },
+  {
+    name: "Art Institute of Chicago",
+    lat: 41.8796,
+    lng: -87.6237,
+    wiki: "Art_Institute_of_Chicago",
+    type: "Sanat Müzesi",
+    loc: "ABD, Chicago",
+    year: "1879",
+    desc: "Amerika'nın en büyük ve en eski sanat müzelerinden biri."
+  },
+  {
+    name: "National Museum of Anthropology (Mexico City)",
+    lat: 19.4260,
+    lng: -99.1860,
+    wiki: "National_Museum_of_Anthropology_(Mexico_City)",
+    type: "Antropoloji Müzesi",
+    loc: "Meksika, Mexico City",
+    year: "1964",
+    desc: "Meksika'nın zengin tarihini ve kültürünü sergiler."
+  },
+  {
+    name: "Museum of Islamic Art, Doha",
+    lat: 25.2854,
+    lng: 51.5310,
+    wiki: "Museum_of_Islamic_Art,_Doha",
+    type: "Sanat Müzesi",
+    loc: "Katar, Doha",
+    year: "2008",
+    desc: "İslam sanatının en büyük koleksiyonlarından birine sahip modern müze."
+  },
+  {
+    name: "National Gallery of Victoria",
+    lat: -37.8220,
+    lng: 144.9688,
+    wiki: "National_Gallery_of_Victoria",
+    type: "Sanat Müzesi",
+    loc: "Avustralya, Melbourne",
+    year: "1861",
+    desc: "Avustralya'nın en eski ve en büyük sanat müzesi."
+  },
+  {
+    name: "Pergamon Museum",
+    lat: 52.5212,
+    lng: 13.3969,
+    wiki: "Pergamon_Museum",
+    type: "Arkeoloji Müzesi",
+    loc: "Almanya, Berlin",
+    year: "1930",
+    desc: "Antik çağ eserlerinin sergilendiği önemli müze."
+  },
+  {
+    name: "National Museum of Western Art",
+    lat: 35.7138,
+    lng: 139.7745,
+    wiki: "National_Museum_of_Western_Art",
+    type: "Sanat Müzesi",
+    loc: "Japonya, Tokyo",
+    year: "1959",
+    desc: "Batı sanatının önemli koleksiyonlarına ev sahipliği yapar."
+  },
+  {
+    name: "Centre Pompidou",
+    lat: 48.8606,
+    lng: 2.3522,
+    wiki: "Centre_Pompidou",
+    type: "Modern Sanat Müzesi",
+    loc: "Fransa, Paris",
+    year: "1977",
+    desc: "Modern ve çağdaş sanatın en önemli merkezlerinden biri."
+  },
+  {
+    name: "Museum of the Egyptian Antiquities",
+    lat: 30.0477,
+    lng: 31.2336,
+    wiki: "Egyptian_Museum",
+    type: "Arkeoloji Müzesi",
+    loc: "Mısır, Kahire",
+    year: "1902",
+    desc: "Dünyanın en önemli antik Mısır koleksiyonlarından birine sahip."
+  },
+  {
+    name: "National Museum of African Art",
+    lat: 38.888,  
+    lng: -77.0255,
+    wiki: "National_Museum_of_African_Art",
+    type: "Sanat Müzesi",
+    loc: "ABD, Washington D.C.",
+    year: "1987",
+    desc: "Afrika sanatına odaklanan önemli müze."
+  },
+  {
+    name: "Pushkin State Museum of Fine Arts",
+    lat: 55.7520,
+    lng: 37.6156,
+    wiki: "Pushkin_State_Museum_of_Fine_Arts",
+    type: "Sanat Müzesi",
+    loc: "Rusya, Moskova",
+    year: "1912",
+    desc: "Rusya'nın en büyük sanat müzelerinden biri."
+  },
+  {
+    name: "Museum of Modern Art, New York",
+    lat: 40.7614,
+    lng: -73.9776,
+    wiki: "Museum_of_Modern_Art",
+    type: "Modern Sanat Müzesi",
+    loc: "ABD, New York",
+    year: "1929",
+    desc: "Modern sanatın en önemli koleksiyonlarından birine sahiptir."
+  },
+  {
+    name: "National Museum of American History",
+    lat: 38.8913,
+    lng: -77.0300,
+    wiki: "National_Museum_of_American_History",
+    type: "Tarih Müzesi",
+    loc: "ABD, Washington D.C.",
+    year: "1964",
+    desc: "Amerikan tarihine dair geniş koleksiyonları içerir."
+  },
+  {
+    name: "Royal Ontario Museum",
+    lat: 43.6677,
+    lng: -79.3948,
+    wiki: "Royal_Ontario_Museum",
+    type: "Tarih ve Doğa Müzesi",
+    loc: "Kanada, Toronto",
+    year: "1914",
+    desc: "Kanada'nın en büyük müzelerinden biri."
+  },
+  {
+    name: "Museum of Fine Arts, Houston",
+    lat: 29.7300,
+    lng: -95.3900,
+    wiki: "Museum_of_Fine_Arts,_Houston",
+    type: "Sanat Müzesi",
+    loc: "ABD, Houston",
+    year: "1900",
+    desc: "Texas'ın en büyük sanat müzesi."
+  }
+    ];
+
+  const map = L.map("map").setView([30, 35], 2);
+
+    L.tileLayer(
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      {
+        maxZoom: 19,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      }
+    ).addTo(map);
+
+    const select = document.getElementById("museumSelect");
+
+    // İkon tanımları
+    const defaultIcon = L.divIcon({
+      className: "museum-marker",
+      html: '<i>🏛️</i>',
+    });
+    const selectedIcon = L.divIcon({
+      className: "museum-marker-selected",
+      html: '<i>🏛️</i>',
+    });
+
+    let selectedMarker = null; // Seçili marker referansı
+
+    // Markerları ve dropdown seçeneklerini oluştur
+    museumData.forEach((item) => {
+      const marker = L.marker([item.lat, item.lng], { icon: defaultIcon }).addTo(map);
+
+      const opt = document.createElement("option");
+      opt.value = item.name;
+      opt.textContent = `${item.loc} | ${item.name}`;
+      select.appendChild(opt);
+
+      marker.on("click", () => {
+        select.value = item.name;
+        updateSelection(marker, item);
+      });
+
+      item._marker = marker; // Kolay erişim için item objesine marker referansı ekle
+    });
+
+    // Dropdown değişimi
+    select.onchange = (e) => {
+      const item = museumData.find((d) => d.name === e.target.value);
+      if (item && item._marker) {
+        updateSelection(item._marker, item);
+      }
+    };
+
+    // Seçim güncelleme fonksiyonu
+    function updateSelection(marker, item) {
+      // Önceki seçili marker varsa eski ikonuna döndür
+      if (selectedMarker && selectedMarker !== marker) {
+        selectedMarker.setIcon(defaultIcon);
+      }
+
+      // Yeni seçili markerı farklı ikonla göster
+      marker.setIcon(selectedIcon);
+      selectedMarker = marker;
+
+      // Haritayı seçili marker konumuna uçur
+      map.flyTo(marker.getLatLng(), 13);
+
+      // Bilgi panelini güncelle
+      updatePanel(item);
+    }
+
+    // Wikipedia ve panel güncelleme fonksiyonu
+    async function translateToTR(text) {
+      try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=tr&dt=t&q=${encodeURIComponent(
+          text
+        )}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        return data[0].map((x) => x[0]).join("");
+      } catch (e) {
+        return text;
+      }
+    }
+
+    async function updatePanel(item) {
+      document.getElementById("museum-title").textContent = item.name;
+      document.getElementById("type-box").style.display = "inline-flex";
+      document.getElementById("museum-type").textContent = item.type;
+      document.getElementById("museum-stats").style.display = "grid";
+      document.getElementById("stat-loc").textContent = item.loc;
+      document.getElementById("stat-year").textContent = item.year;
+
+      const textEl = document.getElementById("museum-text");
+      textEl.innerHTML = `<strong>Müze Hakkında:</strong> ${item.desc}<br><br><span id="summary" style="opacity:0.6;">Bilgiler aranıyor...</span>`;
+
+      const imgEl = document.getElementById("museum-img");
+      const linkEl = document.getElementById("wiki-link");
+      imgEl.style.display = "none";
+      linkEl.style.display = "none";
+
+      try {
+        let res = await fetch(
+          `https://tr.wikipedia.org/api/rest_v1/page/summary/${item.wiki}`
+        );
+        let data = await res.json();
+
+        if (data.extract && data.type !== "disambiguation") {
+          renderWiki(data, false);
+        } else {
+          throw new Error("Türkçe bulunamadı");
+        }
+      } catch (e) {
+        try {
+          let resEn = await fetch(
+            `https://en.wikipedia.org/api/rest_v1/page/summary/${item.wiki}`
+          );
+          let dataEn = await resEn.json();
+
+          if (dataEn.extract) {
+            const translatedTxt = await translateToTR(dataEn.extract);
+            dataEn.extract = translatedTxt;
+            renderWiki(dataEn, true);
+          } else {
+            document.getElementById("summary").textContent = "Bilgiye ulaşılamadı.";
+          }
+        } catch (err) {
+          document.getElementById("summary").textContent = "Bağlantı hatası.";
+        }
+      }
+
+      function renderWiki(data, isTranslated) {
+        const summaryEl = document.getElementById("summary");
+        summaryEl.style.opacity = "1";
+        summaryEl.innerHTML =
+          (isTranslated ? '<span class="translation-info">ℹ️ Otomatik Çeviri</span><br>' : "") +
+          data.extract;
+
+        if (data.thumbnail) {
+          imgEl.src = data.thumbnail.source;
+          imgEl.style.display = "block";
+        }
+
+        linkEl.href = data.content_urls.desktop.page;
+        linkEl.style.display = "block";
+        linkEl.textContent = isTranslated ? "KAYNAĞI GÖR (EN)" : "DETAYLI BİLGİ";
+      }
+    }
+  </script>
+</body>
+</html>
+    
+  </body>
+  
+</html>
